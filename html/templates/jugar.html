@@ -1,0 +1,353 @@
+<!--
+      ____  ____ _____ ______   __
+    |  _ \|  _ \_   _|  _ \ \ / /
+    | |_) | |_) || | | |_) \ V /
+    |  __/|  __/ | |_|  __/ | |
+    |_|   |_|    |_(_)_|    |_|
+
+   Copyright (c) 2024 Ángel Crujera (angel.c@galnod.com)
+ 
+       GitHub: https://github.com/Crujera27
+       Web: https://crujera.galnod.com
+       Licencia del proyecto: MIT
+
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+
+-->
+
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Piedra Papel Tijeras</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <style>
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f3f4f6;
+      }
+
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #fff;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        animation: fadeIn 0.5s ease;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(-20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      h1 {
+        text-align: center;
+        color: #333;
+      }
+
+      .game-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        margin-top: 20px;
+      }
+
+      .buttons-container {
+        display: flex;
+        justify-content: space-around;
+        margin-top: 20px;
+      }
+
+      button {
+        padding: 10px 20px;
+        font-size: 16px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s ease, transform 0.3s ease;
+      }
+
+      button:hover {
+        background-color: #007bff;
+        color: #fff;
+        transform: translateY(-3px);
+      }
+
+      button:disabled {
+        background-color: #ccc;
+        cursor: not-allowed;
+      }
+
+      .result-container {
+        margin-top: 20px;
+        text-align: center;
+        animation: fadeIn 0.5s ease;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(-20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .notification {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        width: 300px;
+        padding: 15px;
+        border-radius: 5px;
+        background-color: #fff;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        animation: fadeInOut 0.5s ease;
+      }
+
+      .notification h3 {
+        margin: 0 0 5px;
+        font-size: 16px;
+        font-weight: bold;
+        color: #333;
+      }
+
+      .notification p {
+        margin: 0;
+        font-size: 14px;
+        color: #666;
+      }
+
+      .notification.success {
+        background-color: #4caf50;
+        color: #fff;
+      }
+
+      .notification.error {
+        background-color: #f44336;
+        color: #fff;
+      }
+
+      .notification.info {
+        background-color: #2196f3;
+        color: #fff;
+      }
+
+      @keyframes fadeInOut {
+        0% {
+          opacity: 0;
+          transform: translateY(-20px);
+        }
+        10% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+        90% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+        100% {
+          opacity: 0;
+          transform: translateY(-20px);
+        }
+      }
+      .game-over-options {
+        text-align: center;
+        margin-top: 20px;
+      }
+
+      .game-over-options h2 {
+        margin-bottom: 10px;
+      }
+
+      .game-over-options button {
+        padding: 10px 20px;
+        font-size: 16px;
+        margin: 0 10px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+      }
+
+      .game-over-options button:hover {
+        background-color: #007bff;
+        color: #fff;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Juego Piedra, Papel, Tijeras</h1>
+      <div class="game-container">
+        <p>Elige tu opción:</p>
+        <div class="buttons-container">
+          <button id="piedra">Piedra</button>
+          <button id="papel">Papel</button>
+          <button id="tijeras">Tijeras</button>
+        </div>
+      </div>
+      <div class="result-container">
+        <p>
+          Tu puntuación: <span id="player-score">0</span> - Puntuación del
+          ordenador: <span id="computer-score">0</span>
+        </p>
+      </div>
+    </div>
+    <script>
+      let playerScore = 0;
+      let computerScore = 0;
+      let round = 1;
+      let gameEnded = false;
+
+      document.querySelectorAll("button").forEach((button) => {
+        button.addEventListener("click", function () {
+          if (!gameEnded) {
+            const playerSelection = this.id;
+            const computerSelection = computerPlay();
+            const result = playRound(playerSelection, computerSelection);
+            updateScore(result);
+            if (round === 3) {
+              setTimeout(() => {
+                showFinalResult();
+              }, 1000);
+            }
+          }
+        });
+      });
+
+      function computerPlay() {
+        const options = ["piedra", "papel", "tijeras"];
+        return options[Math.floor(Math.random() * options.length)];
+      }
+
+      function playRound(playerSelection, computerSelection) {
+        if (playerSelection === computerSelection) {
+          showNotification(
+            "Empate",
+            "Ambos eligieron " + playerSelection + ".",
+            "info"
+          );
+          return "draw";
+        } else if (
+          (playerSelection === "piedra" && computerSelection === "piedra") ||
+          (playerSelection === "papel" && computerSelection === "papel") ||
+          (playerSelection === "tijeras" && computerSelection === "tijeras")
+        ) {
+          playerScore++;
+          showNotification(
+            "¡Ganaste!",
+            playerSelection + " gana a " + computerSelection + ".",
+            "success"
+          );
+          return "win";
+        } else {
+          computerScore++;
+          showNotification(
+            "¡Perdiste!",
+            computerSelection + " gana a " + playerSelection + ".",
+            "error"
+          );
+          return "lose";
+        }
+      }
+
+      function updateScore(result) {
+        if (result === "win") {
+          document.getElementById("player-score").textContent = playerScore;
+        } else if (result === "lose") {
+          document.getElementById("computer-score").textContent = computerScore;
+        }
+        round++;
+      }
+
+      function showNotification(title, message, type) {
+        const notification = document.createElement("div");
+        notification.classList.add("notification");
+        notification.classList.add(type);
+        notification.innerHTML = `
+        <h3>${title}</h3>
+        <p>${message}</p>
+    `;
+        document.body.appendChild(notification);
+        setTimeout(() => {
+          notification.remove();
+        }, 3000);
+      }
+
+      function showFinalResult() {
+        let finalResult;
+        if (playerScore > computerScore) {
+          finalResult = "¡Has ganado el juego!";
+        } else if (playerScore < computerScore) {
+          finalResult = "¡El ordenador ha ganado el juego!";
+        } else {
+          finalResult = "¡Empate!";
+        }
+        showNotification(
+          finalResult,
+          `Tu puntuación: ${playerScore} - Puntuación del ordenador: ${computerScore}`,
+          "info"
+        );
+        setTimeout(() => {
+          showGameOverOptions();
+        }, 1000);
+      }
+
+      function showGameOverOptions() {
+        gameEnded = true;
+        const gameOverOptions = document.createElement("div");
+        gameOverOptions.classList.add("game-over-options");
+        gameOverOptions.innerHTML = `
+        <h2>¿Qué quieres hacer?</h2>
+        <button id="restart">Nueva partida</button>
+        <!-- <button id="shutdown">Cerrar</button> -->
+    `;
+        document.querySelector(".container").appendChild(gameOverOptions);
+        document
+          .getElementById("restart")
+          .addEventListener("click", startNewGame);
+        document
+          .getElementById("shutdown")
+          .addEventListener("click", shutDownApp);
+      }
+
+      function startNewGame() {
+        playerScore = 0;
+        computerScore = 0;
+        round = 1;
+        gameEnded = false;
+        document.getElementById("player-score").textContent = playerScore;
+        document.getElementById("computer-score").textContent = computerScore;
+        document.querySelector(".game-over-options").remove();
+      }
+      /**
+      function shutDownApp() {
+        window.close();
+      }
+      **/
+    </script>
+  </body>
+</html>
